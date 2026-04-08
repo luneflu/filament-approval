@@ -1,12 +1,12 @@
 # Filament Approval Workflow Engine
 
-A configurable approval workflow package for Filament v5. Attach approval chains to any Eloquent model with single, sequential, or parallel approvers, SLA timers, escalation rules, delegation, and a full audit trail.
+A configurable approval workflow package for Filament. Attach approval chains to any Eloquent model with single, sequential, or parallel approvers, SLA timers, escalation rules, delegation, and a full audit trail.
 
 ## Requirements
 
 - PHP 8.4+
 - Laravel 13+
-- Filament 5+
+- Filament 4+
 
 ## Features
 

@@ -3,9 +3,6 @@
 A configurable approval workflow package for Filament. Attach approval chains to any Eloquent model with single, sequential, or parallel approvers, SLA timers, escalation rules, delegation, and a full audit trail.
 
 ## Requirements
-
-- PHP 8.4+
-- Laravel 13+
 - Filament 4+
 
 ## Features

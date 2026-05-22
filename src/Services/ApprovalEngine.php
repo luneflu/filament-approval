@@ -20,12 +20,12 @@ use Wezlo\FilamentApproval\Notifications\ApprovalRequestedNotification;
 
 class ApprovalEngine
 {
-    public function submit(Model $approvable, ?ApprovalFlow $flow = null, string|int|null $submittedBy = null): Approval
+    public function submit(Model $approvable, ?ApprovalFlow $flow = null, string|int|null $submittedBy = null, ?string $comment = null): Approval
     {
         $flow ??= ApprovalFlow::forModel($approvable)->firstOrFail();
         $submittedBy ??= auth()->id();
 
-        return DB::transaction(function () use ($approvable, $flow, $submittedBy) {
+        return DB::transaction(function () use ($approvable, $flow, $submittedBy, $comment) {
             $approval = Approval::create([
                 'approval_flow_id' => $flow->id,
                 'approvable_type' => $approvable->getMorphClass(),
@@ -52,6 +52,7 @@ class ApprovalEngine
             $approval->actions()->create([
                 'user_id' => $submittedBy,
                 'type' => ActionType::Submitted,
+                'comment' => $comment,
             ]);
 
             $this->activateNextStep($approval);

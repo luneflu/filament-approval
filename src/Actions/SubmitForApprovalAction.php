@@ -4,6 +4,7 @@ namespace Wezlo\FilamentApproval\Actions;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Wezlo\FilamentApproval\Models\ApprovalFlow;
@@ -37,8 +38,12 @@ class SubmitForApprovalAction extends Action
                 $record = $this->getRecord();
                 $flows = ApprovalFlow::forModel($record)->get();
 
+                $commentSchema = Textarea::make('comment')
+                    ->label(__('filament-approval::approval.actions.comment_optional'))
+                    ->rows(3);
+
                 if ($flows->count() <= 1) {
-                    return [];
+                    return [$commentSchema];
                 }
 
                 return [
@@ -46,6 +51,7 @@ class SubmitForApprovalAction extends Action
                         ->label(__('filament-approval::approval.actions.approval_flow'))
                         ->options($flows->pluck('name', 'id'))
                         ->required(),
+                    $commentSchema,
                 ];
             })
             ->action(function (array $data): void {
@@ -54,7 +60,12 @@ class SubmitForApprovalAction extends Action
                     ? ApprovalFlow::find($data['approval_flow_id'])
                     : null;
 
-                app(ApprovalEngine::class)->submit($record, $flow);
+                app(ApprovalEngine::class)->submit(
+                    $record,
+                    $flow,
+                    null,
+                    $data['comment'] ?? null,
+                );
 
                 Notification::make()
                     ->title(__('filament-approval::approval.actions.submitted_success'))

@@ -51,113 +51,122 @@ class ApprovalFlowResource extends Resource
     {
         $resolvers = FilamentApprovalPlugin::resolveApproverResolvers();
 
-        return $schema->components([
-            Section::make(__('filament-approval::approval.flow.flow_details'))->schema([
-                TextInput::make('name')
-                    ->label(__('filament-approval::approval.flow.name'))
-                    ->required()
-                    ->maxLength(255),
-                Textarea::make('description')
-                    ->label(__('filament-approval::approval.flow.description'))
-                    ->rows(2),
-                Select::make('approvable_type')
-                    ->label(__('filament-approval::approval.flow.applies_to'))
-                    ->options(fn () => static::getApprovableModels())
-                    ->placeholder(__('filament-approval::approval.flow.any_model'))
-                    ->searchable()
-                    ->helperText(__('filament-approval::approval.flow.applies_to_helper')),
-                Toggle::make('is_active')
-                    ->label(__('filament-approval::approval.flow.is_active'))
-                    ->default(true),
-            ])->columns(2),
-
-            Section::make(__('filament-approval::approval.flow.approval_steps'))->schema([
-                Repeater::make('steps')
-                    ->label(__('filament-approval::approval.flow_table.steps'))
-                    ->relationship()
-                    ->orderColumn('order')
-                    ->schema(fn () => [
+        return $schema
+            ->columns(1)
+            ->components([
+                Section::make(__('filament-approval::approval.flow.flow_details'))
+                    ->aside()
+                    ->schema([
                         TextInput::make('name')
-                            ->label(__('filament-approval::approval.flow.step_name'))
+                            ->label(__('filament-approval::approval.flow.name'))
                             ->required()
-                            ->columnSpan(2),
-                        Select::make('type')
-                            ->label(__('filament-approval::approval.flow.type'))
-                            ->options(StepType::class)
-                            ->default('single')
-                            ->required()
-                            ->live(),
-                        Select::make('approver_resolver')
-                            ->label(__('filament-approval::approval.flow.approver_type'))
-                            ->options(collect($resolvers)->mapWithKeys(
-                                fn (string $class) => [$class => $class::label()]
-                            ))
-                            ->required()
-                            ->live(),
+                            ->maxLength(255),
+                        Textarea::make('description')
+                            ->label(__('filament-approval::approval.flow.description'))
+                            ->rows(2),
+                        Select::make('approvable_type')
+                            ->label(__('filament-approval::approval.flow.applies_to'))
+                            ->options(fn() => static::getApprovableModels())
+                            ->placeholder(__('filament-approval::approval.flow.any_model'))
+                            ->searchable()
+                            ->helperText(__('filament-approval::approval.flow.applies_to_helper')),
+                        Toggle::make('is_active')
+                            ->label(__('filament-approval::approval.flow.is_active'))
+                            ->default(true),
+                    ])->columns(2),
 
-                        // Dynamic config fields from the selected resolver
-                        ...static::buildResolverConfigFields($resolvers),
+                Section::make(__('filament-approval::approval.flow.approval_steps'))
+                    ->aside()
+                    ->schema([
+                        Repeater::make('steps')
+                            ->label(__('filament-approval::approval.flow_table.steps'))
+                            ->relationship()
+                            ->orderColumn('order')
+                            ->schema(fn() => [
+                                TextInput::make('name')
+                                    ->label(__('filament-approval::approval.flow.step_name'))
+                                    ->required()
+                                    ->columnSpan(2),
+                                Select::make('type')
+                                    ->label(__('filament-approval::approval.flow.type'))
+                                    ->options(StepType::class)
+                                    ->default('single')
+                                    ->searchable()
+                                    ->required()
+                                    ->live(),
+                                Select::make('approver_resolver')
+                                    ->label(__('filament-approval::approval.flow.approver_type'))
+                                    ->options(collect($resolvers)->mapWithKeys(
+                                        fn(string $class) => [$class => $class::label()]
+                                    ))
+                                    ->searchable()
+                                    ->required()
+                                    ->live(),
 
-                        TextInput::make('required_approvals')
-                            ->label(__('filament-approval::approval.flow.required_approvals'))
-                            ->numeric()
-                            ->default(1)
-                            ->minValue(1)
-                            ->visible(fn (Get $get): bool => $get('type') === 'parallel')
-                            ->helperText(function (Get $get): ?string {
-                                $config = [];
+                                // Dynamic config fields from the selected resolver
+                                ...static::buildResolverConfigFields($resolvers),
 
-                                foreach (['user_ids', 'admin_ids', 'role', 'callback'] as $key) {
-                                    $value = $get('approver_config.'.$key);
+                                TextInput::make('required_approvals')
+                                    ->label(__('filament-approval::approval.flow.required_approvals'))
+                                    ->numeric()
+                                    ->default(1)
+                                    ->minValue(1)
+                                    ->visible(fn(Get $get): bool => $get('type') === 'parallel')
+                                    ->helperText(function (Get $get): ?string {
+                                        $config = [];
 
-                                    if ($value !== null) {
-                                        $config[$key] = $value;
-                                    }
-                                }
+                                        foreach (['user_ids', 'admin_ids', 'role', 'callback'] as $key) {
+                                            $value = $get('approver_config.' . $key);
 
-                                $count = null;
-
-                                if (! empty($config)) {
-                                    foreach ($config as $value) {
-                                        if (is_array($value)) {
-                                            $count = count($value);
-                                            break;
+                                            if ($value !== null) {
+                                                $config[$key] = $value;
+                                            }
                                         }
-                                    }
-                                }
 
-                                if ($count) {
-                                    $required = $get('required_approvals') ?: 1;
+                                        $count = null;
 
-                                    return __('filament-approval::approval.flow.required_approvals_hint', ['required' => $required, 'total' => $count]);
-                                }
+                                        if (! empty($config)) {
+                                            foreach ($config as $value) {
+                                                if (is_array($value)) {
+                                                    $count = count($value);
+                                                    break;
+                                                }
+                                            }
+                                        }
 
-                                return __('filament-approval::approval.flow.required_approvals_helper');
+                                        if ($count) {
+                                            $required = $get('required_approvals') ?: 1;
+
+                                            return __('filament-approval::approval.flow.required_approvals_hint', ['required' => $required, 'total' => $count]);
+                                        }
+
+                                        return __('filament-approval::approval.flow.required_approvals_helper');
+                                    })
+                                    ->live(),
+                                TextInput::make('sla_hours')
+                                    ->numeric()
+                                    ->label(__('filament-approval::approval.flow.sla_hours'))
+                                    ->helperText(__('filament-approval::approval.flow.sla_helper'))
+                                    ->live(),
+                                Select::make('escalation_action')
+                                    ->label(__('filament-approval::approval.flow.escalation_action'))
+                                    ->options(EscalationAction::class)
+                                    ->visible(fn(Get $get): bool => filled($get('sla_hours')))
+                                    ->searchable(),
+                            ])
+                            ->columns(2)
+                            ->reorderable()
+                            ->collapsible()
+                            ->defaultItems(1)
+                            ->addActionLabel(__('filament-approval::approval.flow.add_step'))
+                            ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
+                                return static::normalizeStepData($data);
                             })
-                            ->live(),
-                        TextInput::make('sla_hours')
-                            ->numeric()
-                            ->label(__('filament-approval::approval.flow.sla_hours'))
-                            ->helperText(__('filament-approval::approval.flow.sla_helper'))
-                            ->live(),
-                        Select::make('escalation_action')
-                            ->label(__('filament-approval::approval.flow.escalation_action'))
-                            ->options(EscalationAction::class)
-                            ->visible(fn (Get $get): bool => filled($get('sla_hours'))),
-                    ])
-                    ->columns(2)
-                    ->reorderable()
-                    ->collapsible()
-                    ->defaultItems(1)
-                    ->addActionLabel(__('filament-approval::approval.flow.add_step'))
-                    ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
-                        return static::normalizeStepData($data);
-                    })
-                    ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
-                        return static::normalizeStepData($data);
-                    }),
-            ]),
-        ]);
+                            ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
+                                return static::normalizeStepData($data);
+                            }),
+                    ]),
+            ]);
     }
 
     /**
@@ -180,7 +189,7 @@ class ApprovalFlowResource extends Resource
 
             $groups[] = Group::make()
                 ->schema($fields)
-                ->visible(fn (Get $get): bool => $get('approver_resolver') === $resolverClass)
+                ->visible(fn(Get $get): bool => $get('approver_resolver') === $resolverClass)
                 ->columnSpan(2);
         }
 
@@ -245,7 +254,7 @@ class ApprovalFlowResource extends Resource
                 TextColumn::make('approvable_type')
                     ->label(__('filament-approval::approval.flow_table.model'))
                     ->placeholder(__('filament-approval::approval.flow_table.any'))
-                    ->formatStateUsing(fn (?string $state): string => $state ? class_basename($state) : __('filament-approval::approval.flow_table.any')),
+                    ->formatStateUsing(fn(?string $state): string => $state ? class_basename($state) : __('filament-approval::approval.flow_table.any')),
                 TextColumn::make('steps_count')
                     ->counts('steps')
                     ->label(__('filament-approval::approval.flow_table.steps')),

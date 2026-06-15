@@ -47,10 +47,12 @@ class CallbackResolver implements ApproverResolver
         return [
             Select::make('approver_config.callback')
                 ->label(__('filament-approval::approval.resolver_config.resolver'))
-                ->options(fn () => collect(array_keys(static::$callbacks))
-                    ->mapWithKeys(fn ($k) => [$k => str($k)->headline()->toString()])
-                    ->all()
+                ->options(
+                    fn() => collect(array_keys(static::$callbacks))
+                        ->mapWithKeys(fn($k) => [$k => str($k)->headline()->toString()])
+                        ->all()
                 )
+                ->searchable()
                 ->required(),
         ];
     }
